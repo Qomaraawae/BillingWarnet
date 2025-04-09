@@ -217,7 +217,7 @@ const BillingStore = create((set, get) => ({
 
   fetchPayments: async () => {
     try {
-      set({ loading: false, error: null });
+      set({ loading: true, error: null });
 
       // Ambil data dari koleksi payments
       const paymentsSnapshot = await getDocs(collection(db, "payments"));
@@ -245,12 +245,16 @@ const BillingStore = create((set, get) => ({
         }
       );
 
-      set({ payments: allPayments });
+      set({ payments: allPayments, loading: false });
     } catch (error) {
-      set({ error: "Gagal mengambil data transaksi" });
       console.error("Error fetching payments:", error);
-    } finally {
-      set({ loading: false });
+      set({
+        error:
+          error.code === "permission-denied"
+            ? "Anda tidak memiliki izin untuk mengakses data pembayaran"
+            : "Gagal mengambil data transaksi",
+        loading: false,
+      });
     }
   },
 }));
