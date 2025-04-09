@@ -13,6 +13,7 @@
     "autoprefixer": "^10.4.21",
     "date-fns": "^2.29.3",
     "firebase": "^11.6.0",
+    "framer-motion": "^12.6.3",
     "heroicons": "^2.2.0",
     "jspdf": "^3.0.1",
     "jspdf-autotable": "^5.0.2",

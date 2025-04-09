@@ -9,7 +9,6 @@ import {
   getDocs,
   deleteDoc,
 } from "firebase/firestore";
-import { addMinutes, formatISO } from "date-fns";
 
 const packages = [
   { id: "1h", name: "1 Hour", time: 60, price: 5000 },
@@ -18,7 +17,7 @@ const packages = [
   { id: "5h", name: "5 Hours", time: 300, price: 18000 },
 ];
 
-const useBillingStore = create((set, get) => ({
+const BillingStore = create((set, get) => ({
   users: [],
   packages,
   payments: [],
@@ -88,31 +87,43 @@ const useBillingStore = create((set, get) => ({
 
   extendTime: async (userId, selectedPackage) => {
     try {
-      set({ loading: false, error: null });
-      const user = get().users.find((u) => u.id === userId);
-      if (!user) throw new Error("User not found");
+      set({ loading: true, error: null });
+      const userRef = doc(db, "users", userId);
+      const userSnap = await getDoc(userRef);
 
-      const newEndTime = formatISO(
-        addMinutes(new Date(user.endTime), selectedPackage.time)
+      if (!userSnap.exists()) throw new Error("User not found");
+
+      const userData = userSnap.data();
+      const currentEndTime = userData.endTime
+        ? new Date(userData.endTime)
+        : new Date();
+      const newEndTime = new Date(
+        currentEndTime.getTime() + selectedPackage.time * 60000
       );
-      const newTime = user.time + selectedPackage.time;
-      const newPrice = user.price + selectedPackage.price;
 
-      await updateDoc(doc(db, "users", userId), {
-        time: newTime,
-        price: newPrice,
-        endTime: newEndTime,
+      await updateDoc(userRef, {
+        endTime: newEndTime.toISOString(),
+        time: userData.time + selectedPackage.time,
+        price: userData.price + selectedPackage.price,
+        packageName: `${userData.packageName} + ${selectedPackage.name}`,
       });
 
       set((state) => ({
         users: state.users.map((u) =>
           u.id === userId
-            ? { ...u, time: newTime, price: newPrice, endTime: newEndTime }
+            ? {
+                ...u,
+                endTime: newEndTime.toISOString(),
+                time: u.time + selectedPackage.time,
+                price: u.price + selectedPackage.price,
+                packageName: `${u.packageName} + ${selectedPackage.name}`,
+              }
             : u
         ),
       }));
     } catch (error) {
       set({ error: "Failed to extend time" });
+      throw error;
     } finally {
       set({ loading: false });
     }
@@ -244,4 +255,4 @@ const useBillingStore = create((set, get) => ({
   },
 }));
 
-export default useBillingStore;
+export default BillingStore;
