@@ -47,7 +47,7 @@ function AdminLogin() {
           animate={{ scale: 1 }}
           className="text-2xl font-bold mb-6 text-center text-gray-800"
         >
-          Admin Login
+          Admin Billing Warnet
         </motion.h2>
 
         <AnimatePresence>
